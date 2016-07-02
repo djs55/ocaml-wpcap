@@ -1,0 +1,28 @@
+OASISFormat: 0.4
+Name: wpcap
+Version: 0.1
+Synopsis: Bindings to the Windows winpcap dll
+Authors: [ "David Scott <dave@recoil.org>" ]
+License: ISC
+Plugins: META (0.4), DevFiles (0.4)
+BuildTools: ocamlbuild
+
+Library wpcap
+  Path: lib
+  Modules: Wpcap
+  BuildDepends: ipaddr, bytes, ctypes, ctypes.foreign, result
+
+Executable iflist
+  Path: src
+  MainIs: iflist.ml
+  BuildDepends: wpcap
+  CompiledObject: native
+  Install: false
+
+Document api
+  Title: Documentation and API reference
+  Type: ocamlbuild (0.3)
+  BuildTools+: ocamldoc
+  XOCamlbuildLibraries: wpcap
+  XOcamlbuildPath: doc
+  Install: true
