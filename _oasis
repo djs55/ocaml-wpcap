@@ -19,6 +19,13 @@ Executable iflist
   CompiledObject: native
   Install: false
 
+Executable capture
+  Path: src
+  MainIs: capture.ml
+  BuildDepends: wpcap
+  CompiledObject: native
+  Install: false
+
 Document api
   Title: Documentation and API reference
   Type: ocamlbuild (0.3)

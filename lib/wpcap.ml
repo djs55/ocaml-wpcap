@@ -21,6 +21,14 @@ let init () =
 
 let iface = ptr (ptr pcap_if)
 
+let trim_error_string buf =
+  try
+    let i = String.index buf '\000' in
+    String.sub buf 0 i
+  with Not_found ->
+    buf
+
+
 let pcap_findalldevs () =
   let pcap_findalldevs = foreign "pcap_findalldevs"
     (iface @-> ocaml_string @-> returning int) in
@@ -28,7 +36,7 @@ let pcap_findalldevs () =
   let buf = String.make 65536 '\000' in
   let d = pcap_findalldevs iface (ocaml_string_start buf) in
   if d == -1
-  then Result.Error (`Msg buf)
+  then Result.Error (`Msg (trim_error_string buf))
   else
     let rec loop acc ptr =
       if to_voidp ptr <> null then begin
@@ -39,3 +47,21 @@ let pcap_findalldevs () =
         loop ( { name = n; description = d } :: acc ) ptr
       end else acc in
     Result.Ok (loop [] (!@ iface))
+
+type pcap_t = unit ptr
+let pcap_t : pcap_t typ = ptr void
+let pcap_open_live ~device ?(snaplen=65536) ?(promisc=true) ?(to_ms=0) () =
+  let pcap_open_live = foreign "pcap_open_live"
+    (string @-> int @-> bool @-> int @-> ocaml_string @-> returning pcap_t) in
+  let buf = String.make 65536 '\000' in
+  let p = pcap_open_live device snaplen promisc to_ms (ocaml_string_start buf) in
+  if to_voidp p = null
+  then Result.Error (`Msg (trim_error_string buf))
+  else Result.Ok p
+
+let pcap_close p =
+  let pcap_close = foreign "pcap_close"
+    (pcap_t @-> returning void) in
+  pcap_close p
+
+type t = pcap_t
