@@ -103,4 +103,12 @@ let pcap_next_ex t =
     Result.Ok { caplen; len; data }
   | x -> Result.Error (`Msg ("pcap_next_ex: unrecognised return code " ^ (string_of_int x)))
     
+let pcap_sendpacket t buf =
+  let pcap_sendpacket = foreign "pcap_sendpacket"
+    (pcap_t @-> ptr char @-> int @-> returning int) in
+  let ptr_char = bigarray_start Ctypes_static.Array1 buf.Cstruct.buffer in
+  let ptr_char = ptr_char +@ buf.Cstruct.off in
+  match pcap_sendpacket t ptr_char buf.Cstruct.len with
+  | 0 -> Result.Ok ()
+  | x -> Result.Error (`Msg ("pcap_sendpacket: returned " ^ (string_of_int x)))
 

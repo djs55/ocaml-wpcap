@@ -29,3 +29,7 @@ type packet = {
 
 val pcap_next_ex: t -> (packet, [ `Timeout | `Msg of string ]) Result.result
 (** [pcap_next_ex t] captures a packet and returns it. *)
+
+val pcap_sendpacket: t -> Cstruct.t -> (unit, [ `Msg of string ]) Result.result
+(** [pcap_sendpacket t buffer] sends [buffer] from interface [t]. It is not necessary
+    to fill in the ethernet CRC as it will be computed by the driver. *)
