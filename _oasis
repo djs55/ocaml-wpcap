@@ -10,7 +10,8 @@ BuildTools: ocamlbuild
 Library wpcap
   Path: lib
   Modules: Wpcap
-  BuildDepends: ipaddr, bytes, ctypes, ctypes.foreign, result
+  BuildDepends: ipaddr, bytes, ctypes, ctypes.foreign, result,
+    cstruct
 
 Executable iflist
   Path: src
@@ -22,7 +23,7 @@ Executable iflist
 Executable capture
   Path: src
   MainIs: capture.ml
-  BuildDepends: wpcap
+  BuildDepends: wpcap, pcap-format
   CompiledObject: native
   Install: false
 

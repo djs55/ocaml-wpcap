@@ -20,3 +20,16 @@ val pcap_open_live: device:string -> ?snaplen:int -> ?promisc:bool -> ?to_ms:int
 val pcap_close: t -> unit
 (** [pcap_close t] closes the descriptor and deallocates resources *)
 
+type packet = {
+  caplen: int;     (** length of portion present *)
+  len: int;        (** length of packet (off wire) *)
+  data: Cstruct.t; (** packet data (NB will be overwritten by pcap_next_ex) *)
+}
+(** A captured packet *)
+
+val pcap_next_ex: t -> (packet, [ `Timeout | `Msg of string ]) Result.result
+(** [pcap_next_ex t] captures a packet and returns it. *)
+
+val pcap_sendpacket: t -> Cstruct.t -> (unit, [ `Msg of string ]) Result.result
+(** [pcap_sendpacket t buffer] sends [buffer] from interface [t]. It is not necessary
+    to fill in the ethernet CRC as it will be computed by the driver. *)
