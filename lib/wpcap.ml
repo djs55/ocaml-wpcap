@@ -65,3 +65,42 @@ let pcap_close p =
   pcap_close p
 
 type t = pcap_t
+
+type timeval
+let timeval: timeval structure typ = structure "timeval"
+let tv_sec = field timeval "tv_sec" long
+let tv_usec = field timeval "tv_usec" long
+let _ = seal timeval
+
+type pcap_pkthdr
+let pcap_pkthdr : pcap_pkthdr structure typ = structure "pcap_pkthdr"
+let pcap_pkthdr_ts = field pcap_pkthdr "ts" timeval
+let pcap_pkthdr_caplen = field pcap_pkthdr "caplen" uint32_t
+let pcap_pkthdr_len = field pcap_pkthdr "len" uint32_t
+let _ = seal pcap_pkthdr
+
+type packet = {
+  caplen: int;
+  len: int;
+  data: Cstruct.t;
+}
+
+let pcap_next_ex t =
+  let pcap_next_ex = foreign "pcap_next_ex"
+    (pcap_t @-> ptr (ptr pcap_pkthdr) @-> ptr (ptr char) @-> returning int) in
+  let ptr_ptr_pcap_pkthdr = allocate (ptr pcap_pkthdr) (from_voidp pcap_pkthdr null) in
+  let ptr_ptr_char = allocate (ptr char) (from_voidp char null) in
+  match pcap_next_ex t ptr_ptr_pcap_pkthdr ptr_ptr_char with
+  | 0 -> Result.Error `Timeout
+  | -1 -> Result.Error (`Msg "pcap_next_ex: some error occurred")
+  | -2 -> Result.Error (`Msg "pcap_next_ex: EOF")
+  | 1 ->
+    let hdr = !@ !@ ptr_ptr_pcap_pkthdr in
+    let caplen = Int32.to_int @@ Unsigned.UInt32.to_int32 @@ getf hdr pcap_pkthdr_caplen in
+    let len = Int32.to_int @@ Unsigned.UInt32.to_int32 @@ getf hdr pcap_pkthdr_len in
+    let ba = bigarray_of_ptr Ctypes_static.Array1 caplen Bigarray.char (!@ ptr_ptr_char) in
+    let data = Cstruct.of_bigarray ba in
+    Result.Ok { caplen; len; data }
+  | x -> Result.Error (`Msg ("pcap_next_ex: unrecognised return code " ^ (string_of_int x)))
+    
+
